@@ -59,7 +59,7 @@
         
         .toggle-section-btn { background-color: var(--meta-bg); color: var(--text-color); padding: 8px 12px; font-size: 13px; border-radius: 20px; width: auto; margin: 10px auto; display: block; border: 1px solid var(--border-color); cursor: pointer; }
         
-        /* 💡 그래프 슬라이딩 컨테이너 레이아웃 안정화 */
+        /* 💡 접고 펴는 컨테이너 기본 공통 속성 */
         .foldable-container { 
             max-height: 0; 
             overflow: hidden; 
@@ -68,7 +68,9 @@
             width: 100%;
             box-sizing: border-box;
         }
-        .foldable-container.open { 
+
+        /* 📈 1. 그래프 박스가 열릴 때 크기 제한 */
+        #chartContainer.open { 
             max-height: 340px; 
             padding: 10px; 
         }
@@ -76,6 +78,13 @@
             position: relative;
             width: 100%;
             height: 300px;
+        }
+
+        /* 📜 2. [핵심 수정] 기록 내역 박스가 열릴 때는 높이 제한을 완전히 해제하여 무제한 노출 */
+        #historyContainer.open { 
+            max-height: none !important; 
+            overflow: visible !important;
+            padding: 10px; 
         }
 
         .form-group { margin-bottom: 12px; }
@@ -282,14 +291,11 @@
         document.getElementById('bibleRef').innerText = bibleVerses[0].r;
     }
 
-    // 💡 [그래프 버그 완전 해결 핵심 로직]: 
-    // 보이지 않는 상태에서 캔버스가 죽는 현상을 방지하기 위해, 열릴 때 차트를 '새로 그리고' 닫힐 때 '파괴'합니다.
     function toggleChart() {
         const container = document.getElementById('chartContainer');
         const isOpen = container.classList.toggle('open');
         
         if (isOpen) {
-            // 애니메이션이 살짝 진행된 후 (또는 즉시) 정확한 부모 영역에 그래프 생성
             setTimeout(() => {
                 updateChart();
             }, 50);
