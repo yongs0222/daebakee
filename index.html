@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>임당체크용</title>
+    <style>
+        :root {
+            --primary-color: #ff85a2;
+            --secondary-color: #ffb3c6;
+            --bg-color: #fff5f7;
+            --danger-color: #ff4d4d;
+            --success-color: #4caf50;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: #333;
+            margin: 0;
+            padding: 15px;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        .form-group {
+            margin-bottom: 12px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        input[type="text"], input[type="number"], input[type="date"], textarea {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+        textarea { height: 60px; resize: none; }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover { background-color: #ff6b8b; }
+        hr { border: 0; border-top: 1px solid #eee; margin: 25px 0; }
+        .record-card {
+            background: #fafafa;
+            border: 1px solid #eee;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            position: relative;
+        }
+        .record-date {
+            font-weight: bold;
+            font-size: 16px;
+            border-bottom: 2px solid var(--secondary-color);
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+            color: #555;
+        }
+        .record-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 10px;
+            background: #f0f0f0;
+            padding: 5px 8px;
+            border-radius: 5px;
+        }
+        .sugar-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px dashed #eee;
+            font-size: 14px;
+        }
+        .sugar-item:last-child { border-bottom: none; }
+        .danger { color: var(--danger-color); font-weight: bold; }
+        .success { color: var(--success-color); font-weight: bold; }
+        .meal-memo {
+            font-size: 12px;
+            color: #777;
+            margin-top: 3px;
+            word-break: break-all;
+        }
+        .delete-btn {
+            position: absolute;
+            top: 12px;
+            right: 15px;
+            background: none;
+            color: #aaa;
+            border: none;
+            width: auto;
+            padding: 0;
+            margin: 0;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .delete-btn:hover { color: var(--danger-color); }
+        .cheer-msg {
+            font-size: 11px;
+            color: #ff6b8b;
+            background: #fff0f3;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🩸 임당체크용</h1>
+    
+    <form id="diabetesForm">
+        <div class="grid-2">
+            <div class="form-group">
+                <label>날짜</label>
+                <input type="date" id="date" required>
+            </div>
+            <div class="form-group">
+                <label>몸무게 (kg)</label>
+                <input type="number" id="weight" step="0.1" placeholder="0.0">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>공복 혈압 (mmHg)</label>
+            <input type="text" id="bp" placeholder="예: 120/80">
+        </div>
+        
+        <hr style="margin: 15px 0;">
+
+        <div class="form-group">
+            <label>공복 혈당 (기준: 95 미만)</label>
+            <div class="grid-2">
+                <input type="number" id="sugar_wake" placeholder="mg/dL">
+                <input type="text" id="memo_wake" placeholder="메모 (생략 가능)">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>아침 식후 2시간 (기준: 120 미만)</label>
+            <div class="grid-2">
+                <input type="number" id="sugar_breakfast" placeholder="mg/dL">
+                <input type="text" id="memo_breakfast" placeholder="먹은 음식 등">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>점심 식후 2시간 (기준: 120 미만)</label>
+            <div class="grid-2">
+                <input type="number" id="sugar_lunch" placeholder="mg/dL">
+                <input type="text" id="memo_lunch" placeholder="먹은 음식 등">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>저녁 식후 2시간 (기준: 120 미만)</label>
+            <div class="grid-2">
+                <input type="number" id="sugar_dinner" placeholder="mg/dL">
+                <input type="text" id="memo_dinner" placeholder="먹은 음식 등">
+            </div>
+        </div>
+
+        <button type="submit">저장하기</button>
+    </form>
+
+    <hr>
+
+    <h2>기록 내역</h2>
+    <div id="historyList"></div>
+</div>
+
+<script>
+    // 오늘 날짜 기본값 세팅
+    document.getElementById('date').value = new Date().toISOString().substring(0, 10);
+
+    const form = document.getElementById('diabetesForm');
+    const historyList = document.getElementById('historyList');
+
+    // 로컬 스토리지에서 데이터 가져오기
+    let records = JSON.parse(localStorage.getItem('sugarRecords')) || [];
+
+    // 초기 렌더링
+    renderRecords();
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const record = {
+            id: Date.now(),
+            date: document.getElementById('date').value,
+            weight: document.getElementById('weight').value,
+            bp: document.getElementById('bp').value,
+            wake: { val: document.getElementById('sugar_wake').value, memo: document.getElementById('memo_wake').value },
+            breakfast: { val: document.getElementById('sugar_breakfast').value, memo: document.getElementById('memo_breakfast').value },
+            lunch: { val: document.getElementById('sugar_lunch').value, memo: document.getElementById('memo_lunch').value },
+            dinner: { val: document.getElementById('sugar_dinner').value, memo: document.getElementById('memo_dinner').value }
+        };
+
+        // 기존에 같은 날짜가 있다면 덮어쓰거나 새로 추가 (여기서는 편의상 추가 후 날짜순 정렬)
+        records.push(record);
+        records.sort((a, b) => new Date(b.date) - new Date(a.date)); // 최신순 정렬
+        
+        localStorage.setItem('sugarRecords', JSON.stringify(records));
+        renderRecords();
+        
+        // 입력 폼 초기화 (날짜 제외)
+        const savedDate = document.getElementById('date').value;
+        form.reset();
+        document.getElementById('date').value = savedDate;
+    });
+
+    function deleteRecord(id) {
+        if(confirm("이 기록을 삭제하시겠습니까?")) {
+            records = records.filter(r => r.id !== id);
+            localStorage.setItem('sugarRecords', JSON.stringify(records));
+            renderRecords();
+        }
+    }
+
+    function getDayOfWeek(dateString) {
+        const week = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        return week[new Date(dateString).getDay()];
+    }
+
+    function renderRecords() {
+        historyList.innerHTML = '';
+        if(records.length === 0) {
+            historyList.innerHTML = '<p style="color:#999; text-align:center;">기록된 데이터가 없습니다.</p>';
+            return;
+        }
+
+        records.forEach(r => {
+            const card = document.createElement('div');
+            card.className = 'record-card';
+            
+            const dayOfWeek = getDayOfWeek(r.date);
+            
+            // 혈당 항목 템플릿 함수
+            const createSugarLine = (title, data, limit) => {
+                if (!data.val) return `<div class="sugar-item"><span>◦ ${title}</span><span style="color:#aaa;">미기록</span></div>`;
+                const val = parseInt(data.val);
+                const isOver = val > limit;
+                const checkIcon = "✓";
+                const statusClass = isOver ? "danger" : "success";
+                const warningMsg = isOver ? `<span class="cheer-msg">토닥토닥, 다음 끼니에 조절해요! 🤍</span>` : '';
+                
+                return `
+                    <div class="sugar-item">
+                        <div>
+                            <span class="${statusClass}">${checkIcon} ${val} mg/dL</span> 
+                            <span style="font-size:12px; color:#777;">(${title} >${limit}mg/dL)</span>
+                            ${warningMsg}
+                            ${data.memo ? `<div class="meal-memo">↳ 📝 ${data.memo}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            };
+
+            card.innerHTML = `
+                <button class="delete-btn" onclick="deleteRecord(${r.id})">삭제</button>
+                <div class="record-date">${r.date} ${dayOfWeek}</div>
+                <div class="record-meta">
+                    <span>공복혈압: ${r.bp ? r.bp + ' mmHg' : '-'}</span>
+                    <span>몸무게: ${r.weight ? r.weight + ' kg' : '-'}</span>
+                </div>
+                ${createSugarLine('공복 혈당', r.wake, 95)}
+                ${createSugarLine('아침 식후 2시간', r.breakfast, 120)}
+                ${createSugarLine('점심 식후 2시간', r.lunch, 120)}
+                ${createSugarLine('저녁 식후 2시간', r.dinner, 120)}
+            `;
+            historyList.appendChild(card);
+        });
+    }
+</script>
+
+</body>
+</html>
