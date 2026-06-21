@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>임당체크용 / Gestational Diabetes Tracker</title>
+    <title>Gestational Diabetes Tracker</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -17,6 +17,8 @@
             --success-color: #4caf50;
             --meta-bg: #f0f0f0;
             --card-border: #eeeeee;
+            --theme-bible-bg: #fff0f3;
+            --bible-text-color: #333333;
         }
         [data-theme="nighttime"] {
             --bg-color: #1a1a1a;
@@ -25,11 +27,12 @@
             --border-color: #444444;
             --meta-bg: #3d3d3d;
             --card-border: #444444;
+            --theme-bible-bg: #3d242b;
+            --bible-text-color: #f0f0f0;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 15px;
-            transition: background-color 0.3s, color 0.3s;
         }
         .container { max-width: 600px; margin: 0 auto; background: var(--card-bg); padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .top-controls { display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 15px; }
@@ -37,19 +40,44 @@
         h1 { text-align: center; color: var(--primary-color); margin-bottom: 5px; font-size: 24px; }
         h2 { color: var(--text-color); font-size: 18px; margin-top: 0; }
         
-        /* 로딩 애니메이션 존 */
         .loading-sync {
-            background: #eaf4ff; color: #1a73e8; text-align: center; padding: 8px; border-radius: 8px;
-            font-size: 13px; margin-bottom: 15px; font-weight: bold; display: none;
+            display: none; background: #eaf4ff; color: #1a73e8; text-align: center; padding: 8px; border-radius: 8px;
+            font-size: 13px; margin-bottom: 15px; font-weight: bold;
         }
-        [data-theme="nighttime"] .loading-sync { background: #1c355e; color: #6ba5ff; }
-
-        .bible-box { background-color: var(--theme-bible-bg, #fff0f3); border-left: 4px solid var(--primary-color); padding: 12px 15px; margin: 15px 0; border-radius: 4px; font-size: 14px; line-height: 1.5; color: var(--text-color); }
-        [data-theme="nighttime"] .bible-box { --theme-bible-bg: #3a2529; }
+        
+        .bible-box { 
+            background-color: var(--theme-bible-bg); 
+            color: var(--bible-text-color);
+            border-left: 4px solid var(--primary-color); 
+            padding: 12px 15px; 
+            margin: 15px 0; 
+            border-radius: 4px; 
+            font-size: 14px; 
+            line-height: 1.5; 
+        }
         .bible-ref { font-size: 12px; color: var(--primary-color); text-align: right; font-weight: bold; margin-top: 5px; }
+        
         .toggle-section-btn { background-color: var(--meta-bg); color: var(--text-color); padding: 8px 12px; font-size: 13px; border-radius: 20px; width: auto; margin: 10px auto; display: block; border: 1px solid var(--border-color); cursor: pointer; }
-        .foldable-container { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out, padding 0.4s ease-out; padding: 0 10px; }
-        .foldable-container.open { max-height: 1500px; padding: 10px; }
+        
+        /* 💡 그래프 슬라이딩 컨테이너 레이아웃 안정화 */
+        .foldable-container { 
+            max-height: 0; 
+            overflow: hidden; 
+            transition: max-height 0.4s ease-in-out; 
+            padding: 0 10px; 
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .foldable-container.open { 
+            max-height: 340px; 
+            padding: 10px; 
+        }
+        .chart-wrapper {
+            position: relative;
+            width: 100%;
+            height: 300px;
+        }
+
         .form-group { margin-bottom: 12px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
         input[type="text"], input[type="number"], input[type="date"] { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid var(--border-color); border-radius: 8px; font-size: 15px; background: var(--card-bg); color: var(--text-color); }
@@ -57,6 +85,7 @@
         .submit-btn { width: 100%; padding: 12px; background-color: var(--primary-color); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .submit-btn:disabled { background-color: #ccc; cursor: not-allowed; }
         hr { border: 0; border-top: 1px solid var(--border-color); margin: 25px 0; }
+        
         .record-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 15px; margin-bottom: 15px; position: relative; }
         .record-date { font-weight: bold; font-size: 16px; border-bottom: 2px solid var(--secondary-color); padding-bottom: 5px; margin-bottom: 10px; }
         .record-meta { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 10px; background: var(--meta-bg); padding: 5px 8px; border-radius: 5px; }
@@ -64,13 +93,11 @@
         .sugar-item:last-child { border-bottom: none; }
         .danger { color: var(--danger-color); font-weight: bold; }
         .success { color: var(--success-color); font-weight: bold; }
-        .meal-memo { font-size: 12px; color: #888; margin-top: 3px; }
+        .meal-memo { font-size: 12px; color: #666; margin-top: 4px; padding-left: 10px; font-style: italic; word-break: break-all; }
         .card-actions { position: absolute; top: 12px; right: 15px; display: flex; gap: 10px; }
-        .action-btn { background: none; border: none; color: #aaa; cursor: pointer; font-size: 13px; }
-        .action-btn.edit:hover { color: #2196F3; }
-        .action-btn.delete:hover { color: var(--danger-color); }
+        .action-btn { background: none; border: none; color: #ff85a2; cursor: pointer; font-size: 13px; font-weight: bold; }
+        .action-btn:hover { color: #2196F3; }
         .cheer-msg { font-size: 11px; color: #ff6b8b; background: #fff0f3; padding: 2px 6px; border-radius: 4px; margin-left: 5px; }
-        [data-theme="nighttime"] .cheer-msg { background: #4a272f; color: #ff85a2; }
     </style>
 </head>
 <body>
@@ -81,9 +108,7 @@
         <button class="top-btn" id="themeBtn" onclick="toggleTheme()">🌙 Nighttime</button>
     </div>
 
-    <h1 id="mainTitle">🩸 임당체크용</h1>
-    
-    <!-- 실시간 클라우드 로딩바 -->
+    <h1>지희 대박이 임당체크용</h1>
     <div class="loading-sync" id="syncBar">🔄 구글 클라우드에서 최신 데이터를 동기화하는 중...</div>
     
     <div class="bible-box" id="bibleBox">
@@ -93,7 +118,9 @@
 
     <button type="button" class="toggle-section-btn" id="chartToggleBtn" onclick="toggleChart()">📈 혈당 추이 그래프 보기</button>
     <div class="foldable-container" id="chartContainer">
-        <canvas id="sugarChart"></canvas>
+        <div class="chart-wrapper">
+            <canvas id="sugarChart"></canvas>
+        </div>
     </div>
 
     <form id="diabetesForm">
@@ -118,7 +145,7 @@
         <div class="form-group">
             <label id="lblWake">공복 혈당 (기준: 95 미만)</label>
             <div class="grid-2">
-                <input type="number" id="sugar_wake" placeholder="mg/dL">
+                <input type="text" id="sugar_wake" placeholder="mg/dL">
                 <input type="text" id="memo_wake" placeholder="메모">
             </div>
         </div>
@@ -126,7 +153,7 @@
         <div class="form-group">
             <label id="lblBreakfast">아침 식후 2시간 (기준: 120 미만)</label>
             <div class="grid-2">
-                <input type="number" id="sugar_breakfast" placeholder="mg/dL">
+                <input type="text" id="sugar_breakfast" placeholder="mg/dL">
                 <input type="text" id="memo_breakfast" placeholder="먹은 음식 등">
             </div>
         </div>
@@ -134,7 +161,7 @@
         <div class="form-group">
             <label id="lblLunch">점심 식후 2시간 (기준: 120 미만)</label>
             <div class="grid-2">
-                <input type="number" id="sugar_lunch" placeholder="mg/dL">
+                <input type="text" id="sugar_lunch" placeholder="mg/dL">
                 <input type="text" id="memo_lunch" placeholder="먹은 음식 등">
             </div>
         </div>
@@ -142,7 +169,7 @@
         <div class="form-group">
             <label id="lblDinner">저녁 식후 2시간 (기준: 120 미만)</label>
             <div class="grid-2">
-                <input type="number" id="sugar_dinner" placeholder="mg/dL">
+                <input type="text" id="sugar_dinner" placeholder="mg/dL">
                 <input type="text" id="memo_dinner" placeholder="먹은 음식 등">
             </div>
         </div>
@@ -160,25 +187,20 @@
 </div>
 
 <script>
-    // ⚠️ [필수 세팅] 새로 생성/배포한 구글 웹 앱 URL을 여기에 붙여넣으세요!
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzISNX9c6LmQ7j7_Xw6FaOLUxuDmaC2sm_hKXlD2cOSsI8S-S1DZmUTqf9kADNVQvlp/exec';
-
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyWE-xETMUawi907tX_Cg_7g_p7E4QA8CP1RL6tUyIMimciCesECuP0NdiL_QQeFt0m/exec';
+    
     const langPack = {
         ko: {
-            title: "🩸 임당체크용", subtitle: "기록 내역", chartShow: "📈 혈당 추이 그래프 보기", chartHide: "📉 그래프 접기",
-            histShow: "📜 기록 내역 보기", histHide: "📜 기록 내역 접기", date: "날짜", weight: "몸무게 (kg)",
-            bp: "공복 혈압 (mmHg)", wake: "공복 혈당 (기준: 95 미만)", breakfast: "아침 식후 2시간 (기준: 120 미만)",
-            lunch: "점심 식후 2시간 (기준: 120 미만)", dinner: "저녁 식후 2시간 (기준: 120 미만)", submit: "기록 저장 / 업데이트",
-            saving: "구글 시트 저장 중...", unrecorded: "미기록", logTime: "기록 시간: ", loading: "🔄 구글 클라우드에서 최신 데이터를 동기화하는 중...",
-            alertSave: "기록이 구글 시트에 안전하게 실시간 저장되었습니다.", alertConfirmDel: "이 기록을 로컬에서 제거하시겠습니까? (구글시트 본문은 직접 삭제해 주세요)", cheer: "토닥토닥, 다음 끼니에 조절해요! 🤍"
+            subtitle: "기록 내역", date: "날짜", weight: "몸무게 (kg)",
+            bp: "공복 혈압 (mmHg)", wake: "공복 혈당", breakfast: "아침 식후 2시간", lunch: "점심 식후 2시간", dinner: "저녁 식후 2시간",
+            submit: "기록 저장 / 업데이트", saving: "구글 시트 저장 중...", unrecorded: "미기록", loading: "🔄 구글 클라우드에서 동기화 중...",
+            cheer: "토닥토닥, 다음 끼니에 조절해요! 🤍"
         },
         en: {
-            title: "🩸 Sugar Tracker", subtitle: "History Logs", chartShow: "📈 Show Glucose Chart", chartHide: "📉 Hide Chart",
-            histShow: "📜 View History Logs", histHide: "📜 Hide History Logs", date: "Date", weight: "Weight (kg)",
-            bp: "Fasting BP (mmHg)", wake: "Fasting Glucose (<95 mg/dL)", breakfast: "Breakfast 2hr (<120 mg/dL)",
-            lunch: "Lunch 2hr (<120 mg/dL)", dinner: "Dinner 2hr (<120 mg/dL)", submit: "Save / Update Record",
-            saving: "Saving to Google Sheets...", unrecorded: "No Record", logTime: "Logged at: ", loading: "🔄 Syncing data from Google Cloud...",
-            alertSave: "Record saved and successfully backed up to Google Sheets.", alertConfirmDel: "Remove this from local view?", cheer: "It's okay, let's manage the next meal! 🤍"
+            subtitle: "History Logs", date: "Date", weight: "Weight (kg)",
+            bp: "BP (mmHg)", wake: "Fasting", breakfast: "Breakfast 2hr", lunch: "Lunch 2hr", dinner: "Dinner 2hr",
+            submit: "Save Record", saving: "Saving...", unrecorded: "No Record", loading: "🔄 Syncing data...",
+            cheer: "It's okay, manage next meal! 🤍"
         }
     };
 
@@ -188,72 +210,57 @@
     let sugarChart = null;
 
     const bibleVerses = [
-        { v: "너의 하나님 여호와가 너의 가운데에 계시니 그는 구원을 베푸실 전능자이시라 그가 너로 말미암아 기쁨을 이기지 못하시며 너를 잠잠히 사랑하시며 너로 말미암아 즐거이 부르며 기뻐하시리라", r: "스바냐 3:17" },
-        { v: "여호와는 너를 지키시는 이시라 여호와께서 네 오른쪽에서 네 그늘이 되시나니 낮의 해가 너를 상하게 하지 아니하며 밤의 달도 너를 해치지 아니하리로다", r: "시편 121:5-6" },
-        { v: "두려워하지 말라 내가 너와 함께 함이라 놀라지 말라 나는 네 하나님이 됨이라 내가 너를 굳세게 하리라 참으로 너를 도와 주리라 참으로 나의 의로운 오른손으로 너를 붙들리라", r: "이사야 41:10" },
-        { v: "평안을 너희에게 끼치노니 곧 나의 평안을 너희에게 주노라 내가 너희에게 주는 것은 세상이 주는 것과 같지 아니하니라 너희는 마음에 근심하지도 말고 두려워하지도 말라", r: "요한복음 14:27" },
-        { v: "사람이 마음으로 자기의 길을 계획할지라도 그의 걸음을 인도하시는 이는 여호와시니라", r: "잠언 16:9" },
-        { v: "아무 것도 염려하지 말고 다만 모든 일에 기도와 간구로, 너희 구할 것을 감사함으로 하나님께 아뢰라 그리하면 모든 지각에 뛰어난 하나님의 평안이 그리스도 예수 안에서 너희 마음과 생각을 지키시리라", r: "빌립보서 4:6-7" }
+        { v: "너의 하나님 여호와가 너의 가운데에 계시니 그는 구원을 베푸실 전능자이시라 그가 너로 말미암아 기쁨을 이기지 못하시며 너를 잠잠히 사랑하시며 너로 말미암아 즐거이 부르며 기뻐하시리라", r: "스바냐 3:17" }
     ];
 
-    // 기본 로컬 데이터 가져오기 후 클라우드 다운로드 수행
     records = JSON.parse(localStorage.getItem('sugarRecords')) || [];
     
-    document.getElementById('date').value = new Date().toISOString().substring(0, 10);
+    const initNow = new Date();
+    document.getElementById('date').value = `${initNow.getFullYear()}-${String(initNow.getMonth() + 1).padStart(2, '0')}-${String(initNow.getDate()).padStart(2, '0')}`;
     document.getElementById('date').addEventListener('change', function() { loadRecordByDate(this.value); });
     document.documentElement.setAttribute('data-theme', currentTheme);
     
     applyLanguage();
     setDailyVerse();
-    renderAll();
-    loadRecordByDate(document.getElementById('date').value);
-    
-    // 핵심: 앱 로드 시 구글 시트 원격 저장소로부터 데이터 강제 동기화(불러오기)
+    renderRecords();
     fetchCloudData();
 
     function applyLanguage() {
         const p = langPack[currentLang];
-        document.getElementById('mainTitle').innerText = p.title;
         document.getElementById('subTitle').innerText = p.subtitle;
         document.getElementById('lblDate').innerText = p.date;
         document.getElementById('lblWeight').innerText = p.weight;
         document.getElementById('lblBp').innerText = p.bp;
-        document.getElementById('lblWake').innerText = p.wake;
-        document.getElementById('lblBreakfast').innerText = p.breakfast;
-        document.getElementById('lblLunch').innerText = p.lunch;
-        document.getElementById('lblDinner').innerText = p.dinner;
+        document.getElementById('lblWake').innerText = p.wake + " (<95)";
+        document.getElementById('lblBreakfast').innerText = p.breakfast + " (<120)";
+        document.getElementById('lblLunch').innerText = p.lunch + " (<120)";
+        document.getElementById('lblDinner').innerText = p.dinner + " (<120)";
         document.getElementById('syncBar').innerText = p.loading;
-        
-        const btnSubmit = document.getElementById('submitBtn');
-        if(!btnSubmit.disabled) btnSubmit.innerText = p.submit;
-        
+        document.getElementById('submitBtn').innerText = p.submit;
         document.getElementById('langBtn').innerText = currentLang === 'ko' ? 'EN' : 'KO';
-        const isChartOpen = document.getElementById('chartContainer').classList.contains('open');
-        document.getElementById('chartToggleBtn').innerText = isChartOpen ? p.chartHide : p.chartShow;
-        const isHistOpen = document.getElementById('historyContainer').classList.contains('open');
-        document.getElementById('historyToggleBtn').innerText = isHistOpen ? p.histHide : p.histShow;
     }
 
     function fetchCloudData() {
-        if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes('여기에_복사한_구글')) return;
-        const syncBar = document.getElementById('syncBar');
-        syncBar.style.display = 'block';
+        if (!GOOGLE_SCRIPT_URL) return;
+        document.getElementById('syncBar').style.display = 'block';
 
         fetch(GOOGLE_SCRIPT_URL)
             .then(res => res.json())
             .then(cloudRecords => {
                 if (cloudRecords && cloudRecords.length > 0) {
-                    // 구글 시트에서 받아온 깨끗한 배열 데이터로 병합 및 동기화
                     records = cloudRecords;
                     localStorage.setItem('sugarRecords', JSON.stringify(records));
-                    renderAll();
+                    renderRecords();
+                    if(document.getElementById('chartContainer').classList.contains('open')) {
+                        updateChart();
+                    }
                     loadRecordByDate(document.getElementById('date').value);
                 }
-                syncBar.style.display = 'none';
+                document.getElementById('syncBar').style.display = 'none';
             })
             .catch(err => {
-                console.error("구글 시트 데이터 불러오기 실패:", err);
-                syncBar.style.display = 'none';
+                console.error(err);
+                document.getElementById('syncBar').style.display = 'none';
             });
     }
 
@@ -268,46 +275,94 @@
         currentTheme = currentTheme === 'daytime' ? 'nighttime' : 'daytime';
         localStorage.setItem('sugarTheme', currentTheme);
         document.documentElement.setAttribute('data-theme', currentTheme);
-        document.getElementById('themeBtn').innerText = currentTheme === 'daytime' ? '🌙 Nighttime' : '☀️ Daytime';
     }
 
     function setDailyVerse() {
-        const today = new Date().getDate();
-        document.getElementById('bibleVerse').innerText = bibleVerses[today % bibleVerses.length].v;
-        document.getElementById('bibleRef').innerText = bibleVerses[today % bibleVerses.length].r;
+        document.getElementById('bibleVerse').innerText = bibleVerses[0].v;
+        document.getElementById('bibleRef').innerText = bibleVerses[0].r;
     }
 
+    // 💡 [그래프 버그 완전 해결 핵심 로직]: 
+    // 보이지 않는 상태에서 캔버스가 죽는 현상을 방지하기 위해, 열릴 때 차트를 '새로 그리고' 닫힐 때 '파괴'합니다.
     function toggleChart() {
         const container = document.getElementById('chartContainer');
-        container.classList.toggle('open');
-        applyLanguage();
-        if(container.classList.contains('open')) {
-            setTimeout(() => { if(sugarChart) { sugarChart.resize(); sugarChart.update(); } }, 450);
+        const isOpen = container.classList.toggle('open');
+        
+        if (isOpen) {
+            // 애니메이션이 살짝 진행된 후 (또는 즉시) 정확한 부모 영역에 그래프 생성
+            setTimeout(() => {
+                updateChart();
+            }, 50);
+        } else {
+            if (sugarChart) {
+                sugarChart.destroy();
+                sugarChart = null;
+            }
         }
     }
 
     function toggleHistory() {
-        document.getElementById('historyContainer').classList.toggle('open');
-        applyLanguage();
+        const container = document.getElementById('historyContainer');
+        container.classList.toggle('open');
+    }
+
+    function formatLoadingDate(dateStr) {
+        if (!dateStr) return "";
+        let str = String(dateStr).trim();
+        
+        if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+            return str;
+        }
+
+        const parsedDate = new Date(str);
+        if (!isNaN(parsedDate.getTime())) {
+            let year = parsedDate.getFullYear();
+            let month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+            let day = String(parsedDate.getDate()).padStart(2, '0');
+            if (year === 2021 || year < 2020) year = 2026;
+            return `${year}-${month}-${day}`;
+        }
+
+        let matches = str.match(/\d+/g);
+        if (matches && matches.length >= 3) {
+            let year = matches[0].length === 4 ? matches[0] : (matches[2].length === 4 ? matches[2] : "2026");
+            let month = matches[0].length === 4 ? matches[1] : matches[0];
+            let day = matches[0].length === 4 ? matches[2] : matches[1];
+            if (parseInt(month) > 12) { const tmp = month; month = day; day = tmp; }
+            if (year === "2021" || year === "21") year = "2026";
+            return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        }
+        
+        return str.substring(0, 10);
+    }
+
+    function editRecord(date) {
+        loadRecordByDate(formatLoadingDate(date));
+        window.scrollTo({top: 0, behavior: 'smooth'});
     }
 
     function loadRecordByDate(dateString) {
-        const target = records.find(r => r.date === dateString);
+        const targetDate = formatLoadingDate(dateString);
+        
+        const target = records.find(r => {
+            const cleanedRecordDate = formatLoadingDate(r.date);
+            return cleanedRecordDate === targetDate;
+        });
+        
+        document.getElementById('diabetesForm').reset();
+        document.getElementById('date').value = targetDate;
+        
         if (target) {
             document.getElementById('weight').value = target.weight || "";
             document.getElementById('bp').value = target.bp || "";
-            document.getElementById('sugar_wake').value = target.wake.val || "";
-            document.getElementById('memo_wake').value = target.wake.memo || "";
-            document.getElementById('sugar_breakfast').value = target.breakfast.val || "";
-            document.getElementById('memo_breakfast').value = target.breakfast.memo || "";
-            document.getElementById('sugar_lunch').value = target.lunch.val || "";
-            document.getElementById('memo_lunch').value = target.lunch.memo || "";
-            document.getElementById('sugar_dinner').value = target.dinner.val || "";
-            document.getElementById('memo_dinner').value = target.dinner.memo || "";
-        } else {
-            const savedDate = document.getElementById('date').value;
-            document.getElementById('diabetesForm').reset();
-            document.getElementById('date').value = savedDate;
+            document.getElementById('sugar_wake').value = target.wake?.val || "";
+            document.getElementById('memo_wake').value = target.wake?.memo || "";
+            document.getElementById('sugar_breakfast').value = target.breakfast?.val || "";
+            document.getElementById('memo_breakfast').value = target.breakfast?.memo || "";
+            document.getElementById('sugar_lunch').value = target.lunch?.val || "";
+            document.getElementById('memo_lunch').value = target.lunch?.memo || "";
+            document.getElementById('sugar_dinner').value = target.dinner?.val || "";
+            document.getElementById('memo_dinner').value = target.dinner?.memo || "";
         }
     }
 
@@ -328,86 +383,70 @@
             dinner: { val: document.getElementById('sugar_dinner').value, memo: document.getElementById('memo_dinner').value }
         };
 
-        // 로컬 업데이트 선반영
-        records = records.filter(r => r.date !== inputDate);
-        records.push(newRecord);
-        records.sort((a, b) => new Date(b.date) - new Date(a.date));
-        localStorage.setItem('sugarRecords', JSON.stringify(records));
-        renderAll();
+        const postPayload = {
+            id: newRecord.id, date: newRecord.date, weight: newRecord.weight, bp: newRecord.bp, loggedAt: newRecord.loggedAt,
+            wake_val: newRecord.wake.val, wake_memo: newRecord.wake.memo,
+            breakfast_val: newRecord.breakfast.val, breakfast_memo: newRecord.breakfast.memo,
+            lunch_val: newRecord.lunch.val, lunch_memo: newRecord.lunch.memo,
+            dinner_val: newRecord.dinner.val, dinner_memo: newRecord.dinner.memo
+        };
 
-        // 클라우드 POST 전송
-        if (GOOGLE_SCRIPT_URL && !GOOGLE_SCRIPT_URL.includes('여기에_복사한_구글')) {
-            btnSubmit.disabled = true;
-            btnSubmit.innerText = p.saving;
+        btnSubmit.disabled = true;
+        btnSubmit.innerText = p.saving;
 
-            fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newRecord)
-            })
-            .then(() => {
-                btnSubmit.disabled = false;
-                btnSubmit.innerText = p.submit;
-                alert(p.alertSave);
-                fetchCloudData(); // 구글 시트에 들어간 최신 번호판 다시 재동기화
-            })
-            .catch(err => {
-                console.error(err);
-                btnSubmit.disabled = false;
-                btnSubmit.innerText = p.submit;
-            });
-        }
+        fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(postPayload)
+        })
+        .then(() => {
+            btnSubmit.disabled = false;
+            applyLanguage();
+            fetchCloudData();
+        })
+        .catch(err => {
+            console.error(err);
+            btnSubmit.disabled = false;
+            applyLanguage();
+        });
     });
-
-    function editRecord(date) {
-        document.getElementById('date').value = date;
-        loadRecordByDate(date);
-        window.scrollTo({top: 0, behavior: 'smooth'});
-    }
-
-    function deleteRecord(id) {
-        if(confirm(langPack[currentLang].alertConfirmDel)) {
-            records = records.filter(r => r.id !== id);
-            localStorage.setItem('sugarRecords', JSON.stringify(records));
-            renderAll();
-        }
-    }
-
-    function renderAll() { renderRecords(); updateChart(); }
 
     function renderRecords() {
         const historyList = document.getElementById('historyList');
         historyList.innerHTML = '';
         const p = langPack[currentLang];
-        if(records.length === 0) {
-            historyList.innerHTML = `<p style="color:#999; text-align:center;">No Data</p>`;
-            return;
-        }
+        if(!records || records.length === 0) return;
 
-        records.forEach(r => {
+        const sorted = [...records].sort((a,b) => formatLoadingDate(b.date).localeCompare(formatLoadingDate(a.date)));
+
+        sorted.forEach(r => {
             const card = document.createElement('div');
             card.className = 'record-card';
             
+            const cleanDate = formatLoadingDate(r.date);
+            
             const createSugarLine = (title, data, limit) => {
-                if (!data || !data.val) return `<div class="sugar-item"><span>◦ ${title}</span><span style="color:#aaa;">: ${p.unrecorded}</span></div>`;
-                const val = parseInt(data.val);
-                const isOver = val > limit;
+                if (!data || (!data.val && !data.memo)) return `<div class="sugar-item"><span>◦ ${title}</span><span style="color:#aaa;">: ${p.unrecorded}</span></div>`;
+                const valStr = String(data.val || "").trim();
+                const numMatch = valStr.match(/\d+/);
+                const numericVal = numMatch ? parseInt(numMatch[0]) : 0;
+                const isOver = numericVal > limit;
+                
                 return `
                     <div class="sugar-item">
-                        <span class="${isOver ? "danger" : "success"}">✓ ${val} mg/dL</span> 
+                        <span class="${numericVal > 0 ? (isOver ? "danger" : "success") : ""}">✓ ${valStr || p.unrecorded} mg/dL</span> 
                         <span style="font-size:12px; color:#777;">(${title})</span>
-                        ${isOver ? `<span class="cheer-msg">${p.cheer}</span>` : ''}
+                        ${(numericVal > 0 && isOver) ? `<span class="cheer-msg">${p.cheer}</span>` : ''}
                         ${data.memo ? `<div class="meal-memo">↳ 📝 ${data.memo}</div>` : ''}
                     </div>`;
             };
 
             card.innerHTML = `
                 <div class="card-actions">
-                    <button class="action-btn edit" onclick="editRecord('${r.date}')">Edit</button>
-                    <button class="action-btn delete" onclick="deleteRecord(${r.id})">Del</button>
+                    <button class="action-btn edit" onclick="editRecord('${cleanDate}')">Edit</button>
                 </div>
-                <div class="record-date">${r.date}</div>
+                <div class="record-date">${cleanDate}</div>
                 <div class="record-meta">
                     <span>BP: ${r.bp || '-'}</span><span>Wt: ${r.weight ? r.weight + 'kg' : '-'}</span>
                 </div>
@@ -421,22 +460,29 @@
     }
 
     function updateChart() {
-        const sortedRecords = [...records].sort((a, b) => new Date(a.date) - new Date(b.date));
-        const labels = sortedRecords.map(r => r.date.substring(5));
         if (sugarChart) sugarChart.destroy();
+        
+        const sortedRecords = [...records].sort((a, b) => formatLoadingDate(a.date).localeCompare(formatLoadingDate(b.date)));
+        const labels = sortedRecords.map(r => formatLoadingDate(r.date).substring(5));
 
-        sugarChart = new Chart(document.getElementById('sugarChart').getContext('2d'), {
+        const parseChartVal = (d) => { if(!d || !d.val) return null; const m = String(d.val).match(/\d+/); return m ? parseInt(m[0]) : null; };
+
+        const ctx = document.getElementById('sugarChart').getContext('2d');
+        sugarChart = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: labels,
                 datasets: [
-                    { label: currentLang === 'ko' ? '공복' : 'Fasting', data: sortedRecords.map(r => r.wake.val || null), borderColor: '#ffb3c6', spanGaps: true },
-                    { label: currentLang === 'ko' ? '아침' : 'Breakfast', data: sortedRecords.map(r => r.breakfast.val || null), borderColor: '#4caf50', spanGaps: true },
-                    { label: currentLang === 'ko' ? '점심' : 'Lunch', data: sortedRecords.map(r => r.lunch.val || null), borderColor: '#2196F3', spanGaps: true },
-                    { label: currentLang === 'ko' ? '저녁' : 'Dinner', data: sortedRecords.map(r => r.dinner.val || null), borderColor: '#9c27b0', spanGaps: true }
+                    { label: '공복', data: sortedRecords.map(r => parseChartVal(r.wake)), borderColor: '#ffb3c6', spanGaps: true },
+                    { label: '아침', data: sortedRecords.map(r => parseChartVal(r.breakfast)), borderColor: '#4caf50', spanGaps: true },
+                    { label: '점심', data: sortedRecords.map(r => parseChartVal(r.lunch)), borderColor: '#2196F3', spanGaps: true },
+                    { label: '저녁', data: sortedRecords.map(r => parseChartVal(r.dinner)), borderColor: '#9c27b0', spanGaps: true }
                 ]
             },
-            options: { responsive: true }
+            options: { 
+                responsive: true,
+                maintainAspectRatio: false
+            }
         });
     }
 </script>
