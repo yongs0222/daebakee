@@ -6,7 +6,6 @@
     <title>임당체크용 / Gestational Diabetes Tracker</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* ☀️ Daytime Theme */
         :root {
             --primary-color: #ff85a2;
             --secondary-color: #ffb3c6;
@@ -19,8 +18,6 @@
             --meta-bg: #f0f0f0;
             --card-border: #eeeeee;
         }
-
-        /* 🌙 Nighttime Theme */
         [data-theme="nighttime"] {
             --bg-color: #1a1a1a;
             --card-bg: #2d2d2d;
@@ -29,126 +26,51 @@
             --meta-bg: #3d3d3d;
             --card-border: #444444;
         }
-
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 15px;
+            background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 15px;
             transition: background-color 0.3s, color 0.3s;
         }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: var(--card-bg);
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        
-        .top-controls {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        .top-btn {
-            background: var(--meta-bg);
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-            padding: 6px 12px;
-            font-size: 12px;
-            border-radius: 20px;
-            cursor: pointer;
-            width: auto;
-            margin: 0;
-        }
-
+        .container { max-width: 600px; margin: 0 auto; background: var(--card-bg); padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .top-controls { display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 15px; }
+        .top-btn { background: var(--meta-bg); color: var(--text-color); border: 1px solid var(--border-color); padding: 6px 12px; font-size: 12px; border-radius: 20px; cursor: pointer; }
         h1 { text-align: center; color: var(--primary-color); margin-bottom: 5px; font-size: 24px; }
         h2 { color: var(--text-color); font-size: 18px; margin-top: 0; }
-
-        .bible-box {
-            background-color: var(--theme-bible-bg, #fff0f3);
-            border-left: 4px solid var(--primary-color);
-            padding: 12px 15px;
-            margin: 15px 0;
-            border-radius: 4px;
-            font-size: 14px;
-            line-height: 1.5;
-            color: var(--text-color);
+        
+        /* 로딩 애니메이션 존 */
+        .loading-sync {
+            background: #eaf4ff; color: #1a73e8; text-align: center; padding: 8px; border-radius: 8px;
+            font-size: 13px; margin-bottom: 15px; font-weight: bold; display: none;
         }
+        [data-theme="nighttime"] .loading-sync { background: #1c355e; color: #6ba5ff; }
+
+        .bible-box { background-color: var(--theme-bible-bg, #fff0f3); border-left: 4px solid var(--primary-color); padding: 12px 15px; margin: 15px 0; border-radius: 4px; font-size: 14px; line-height: 1.5; color: var(--text-color); }
         [data-theme="nighttime"] .bible-box { --theme-bible-bg: #3a2529; }
         .bible-ref { font-size: 12px; color: var(--primary-color); text-align: right; font-weight: bold; margin-top: 5px; }
-
-        .toggle-section-btn {
-            background-color: var(--meta-bg);
-            color: var(--text-color);
-            padding: 8px 12px;
-            font-size: 13px;
-            border-radius: 20px;
-            width: auto;
-            margin: 10px auto;
-            display: block;
-            border: 1px solid var(--border-color);
-        }
-
-        .foldable-container {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.4s ease-out, padding 0.4s ease-out;
-            padding: 0 10px;
-        }
-        .foldable-container.open {
-            max-height: 1500px;
-            padding: 10px;
-        }
-
+        .toggle-section-btn { background-color: var(--meta-bg); color: var(--text-color); padding: 8px 12px; font-size: 13px; border-radius: 20px; width: auto; margin: 10px auto; display: block; border: 1px solid var(--border-color); cursor: pointer; }
+        .foldable-container { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out, padding 0.4s ease-out; padding: 0 10px; }
+        .foldable-container.open { max-height: 1500px; padding: 10px; }
         .form-group { margin-bottom: 12px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
-        input[type="text"], input[type="number"], input[type="date"] {
-            width: 100%; padding: 10px; box-sizing: border-box;
-            border: 1px solid var(--border-color); border-radius: 8px;
-            font-size: 15px; background: var(--card-bg); color: var(--text-color);
-        }
+        input[type="text"], input[type="number"], input[type="date"] { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid var(--border-color); border-radius: 8px; font-size: 15px; background: var(--card-bg); color: var(--text-color); }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        
-        .submit-btn {
-            width: 100%; padding: 12px; background-color: var(--primary-color); color: white;
-            border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px;
-        }
-        .submit-btn:hover { background-color: #ff6b8b; }
+        .submit-btn { width: 100%; padding: 12px; background-color: var(--primary-color); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .submit-btn:disabled { background-color: #ccc; cursor: not-allowed; }
         hr { border: 0; border-top: 1px solid var(--border-color); margin: 25px 0; }
-
-        .record-card {
-            background: var(--card-bg); border: 1px solid var(--card-border);
-            border-radius: 10px; padding: 15px; margin-bottom: 15px; position: relative;
-        }
-        .record-date {
-            font-weight: bold; font-size: 16px; border-bottom: 2px solid var(--secondary-color);
-            padding-bottom: 5px; margin-bottom: 10px; color: var(--text-color);
-        }
-        .record-meta {
-            display: flex; justify-content: space-between; font-size: 12px; color: var(--text-color);
-            margin-bottom: 10px; background: var(--meta-bg); padding: 5px 8px; border-radius: 5px;
-        }
-        .logging-time { font-size: 10px; color: #aaa; text-align: right; margin-top: 5px; }
+        .record-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 15px; margin-bottom: 15px; position: relative; }
+        .record-date { font-weight: bold; font-size: 16px; border-bottom: 2px solid var(--secondary-color); padding-bottom: 5px; margin-bottom: 10px; }
+        .record-meta { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 10px; background: var(--meta-bg); padding: 5px 8px; border-radius: 5px; }
         .sugar-item { padding: 6px 0; border-bottom: 1px dashed var(--border-color); font-size: 14px; }
         .sugar-item:last-child { border-bottom: none; }
         .danger { color: var(--danger-color); font-weight: bold; }
         .success { color: var(--success-color); font-weight: bold; }
-        .meal-memo { font-size: 12px; color: #888; margin-top: 3px; word-break: break-all; }
-        
+        .meal-memo { font-size: 12px; color: #888; margin-top: 3px; }
         .card-actions { position: absolute; top: 12px; right: 15px; display: flex; gap: 10px; }
-        .action-btn { background: none; border: none; color: #aaa; cursor: pointer; font-size: 13px; padding: 0; width: auto; margin: 0; }
+        .action-btn { background: none; border: none; color: #aaa; cursor: pointer; font-size: 13px; }
         .action-btn.edit:hover { color: #2196F3; }
         .action-btn.delete:hover { color: var(--danger-color); }
         .cheer-msg { font-size: 11px; color: #ff6b8b; background: #fff0f3; padding: 2px 6px; border-radius: 4px; margin-left: 5px; }
         [data-theme="nighttime"] .cheer-msg { background: #4a272f; color: #ff85a2; }
-
-        .backup-zone { display: flex; gap: 10px; margin-top: 15px; }
-        .backup-btn { background-color: #666; color: white; font-size: 12px; padding: 8px; border-radius: 6px; border: none; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -159,7 +81,10 @@
         <button class="top-btn" id="themeBtn" onclick="toggleTheme()">🌙 Nighttime</button>
     </div>
 
-    <h1 id="mainTitle">대박이 임당체크용</h1>
+    <h1 id="mainTitle">🩸 임당체크용</h1>
+    
+    <!-- 실시간 클라우드 로딩바 -->
+    <div class="loading-sync" id="syncBar">🔄 구글 클라우드에서 최신 데이터를 동기화하는 중...</div>
     
     <div class="bible-box" id="bibleBox">
         <div class="bible-verse" id="bibleVerse">-</div>
@@ -227,41 +152,33 @@
 
     <hr>
 
-    <button type="button" class="toggle-section-btn" id="historyToggleBtn" onclick="toggleHistory()">📜 기록 내역 보기 (접힘)</button>
+    <button type="button" class="toggle-section-btn" id="historyToggleBtn" onclick="toggleHistory()">📜 기록 내역 보기</button>
     <div class="foldable-container" id="historyContainer">
         <h2 id="subTitle">기록 내역</h2>
         <div id="historyList"></div>
     </div>
-
-    <hr>
-    <div class="backup-zone">
-        <button class="backup-btn" onclick="exportData()" id="btnExport">📥 전체 데이터 백업 (복사하기)</button>
-        <button class="backup-btn" onclick="importData()" id="btnImport">📤 데이터 복원하기</button>
-    </div>
 </div>
 
 <script>
-    // ⚠️ [필수 세팅] 구글 Apps Script 배포 후 받은 URL을 여기에 반드시 붙여넣으세요!
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxgQSdi9xFrl3cJBbq441k8A461TuoY_xb77na4Oj3ZgCa1AP7B1n-1BOpYyZRbicIU/exec';
+    // ⚠️ [필수 세팅] 새로 생성/배포한 구글 웹 앱 URL을 여기에 붙여넣으세요!
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzISNX9c6LmQ7j7_Xw6FaOLUxuDmaC2sm_hKXlD2cOSsI8S-S1DZmUTqf9kADNVQvlp/exec';
 
     const langPack = {
         ko: {
             title: "🩸 임당체크용", subtitle: "기록 내역", chartShow: "📈 혈당 추이 그래프 보기", chartHide: "📉 그래프 접기",
-            histShow: "📜 기록 내역 보기 (펼치기)", histHide: "📜 기록 내역 접기", date: "날짜", weight: "몸무게 (kg)",
+            histShow: "📜 기록 내역 보기", histHide: "📜 기록 내역 접기", date: "날짜", weight: "몸무게 (kg)",
             bp: "공복 혈압 (mmHg)", wake: "공복 혈당 (기준: 95 미만)", breakfast: "아침 식후 2시간 (기준: 120 미만)",
             lunch: "점심 식후 2시간 (기준: 120 미만)", dinner: "저녁 식후 2시간 (기준: 120 미만)", submit: "기록 저장 / 업데이트",
-            saving: "구글 시트 저장 중...", export: "📥 전체 데이터 백업 (복사하기)", import: "📤 데이터 복원하기", unrecorded: "미기록", logTime: "기록 시간: ",
-            alertSave: "기록이 저장/업데이트 되었으며, 구글 시트에 안전하게 백업되었습니다.", alertConfirmDel: "이 기록을 삭제하시겠습니까?", alertCopied: "데이터가 클립보드에 복사되었습니다!",
-            alertPrompt: "백업했던 텍스트 데이터를 그대로 붙여넣어 주세요:", alertSuccessImport: "데이터 복원이 완료되었습니다!", cheer: "토닥토닥, 다음 끼니에 조절해요! 🤍"
+            saving: "구글 시트 저장 중...", unrecorded: "미기록", logTime: "기록 시간: ", loading: "🔄 구글 클라우드에서 최신 데이터를 동기화하는 중...",
+            alertSave: "기록이 구글 시트에 안전하게 실시간 저장되었습니다.", alertConfirmDel: "이 기록을 로컬에서 제거하시겠습니까? (구글시트 본문은 직접 삭제해 주세요)", cheer: "토닥토닥, 다음 끼니에 조절해요! 🤍"
         },
         en: {
             title: "🩸 Sugar Tracker", subtitle: "History Logs", chartShow: "📈 Show Glucose Chart", chartHide: "📉 Hide Chart",
-            histShow: "📜 View History Logs (Unfold)", histHide: "📜 Hide History Logs", date: "Date", weight: "Weight (kg)",
+            histShow: "📜 View History Logs", histHide: "📜 Hide History Logs", date: "Date", weight: "Weight (kg)",
             bp: "Fasting BP (mmHg)", wake: "Fasting Glucose (<95 mg/dL)", breakfast: "Breakfast 2hr (<120 mg/dL)",
             lunch: "Lunch 2hr (<120 mg/dL)", dinner: "Dinner 2hr (<120 mg/dL)", submit: "Save / Update Record",
-            saving: "Saving to Google Sheets...", export: "📥 Backup Data (Copy)", import: "📤 Restore Data", unrecorded: "No Record", logTime: "Logged at: ",
-            alertSave: "Record saved and successfully backed up to Google Sheets.", alertConfirmDel: "Are you sure you want to delete this?", alertCopied: "Data copied to clipboard!",
-            alertPrompt: "Paste your backed-up text data here:", alertSuccessImport: "Data restored successfully!", cheer: "It's okay, let's manage the next meal! 🤍"
+            saving: "Saving to Google Sheets...", unrecorded: "No Record", logTime: "Logged at: ", loading: "🔄 Syncing data from Google Cloud...",
+            alertSave: "Record saved and successfully backed up to Google Sheets.", alertConfirmDel: "Remove this from local view?", cheer: "It's okay, let's manage the next meal! 🤍"
         }
     };
 
@@ -276,30 +193,23 @@
         { v: "두려워하지 말라 내가 너와 함께 함이라 놀라지 말라 나는 네 하나님이 됨이라 내가 너를 굳세게 하리라 참으로 너를 도와 주리라 참으로 나의 의로운 오른손으로 너를 붙들리라", r: "이사야 41:10" },
         { v: "평안을 너희에게 끼치노니 곧 나의 평안을 너희에게 주노라 내가 너희에게 주는 것은 세상이 주는 것과 같지 아니하니라 너희는 마음에 근심하지도 말고 두려워하지도 말라", r: "요한복음 14:27" },
         { v: "사람이 마음으로 자기의 길을 계획할지라도 그의 걸음을 인도하시는 이는 여호와시니라", r: "잠언 16:9" },
-        { v: "아무 것도 염려하지 말고 다만 모든 일에 기도와 간구로, 너희 구할 것을 감사함으로 하나님께 아뢰라 그리하면 모든 지각에 뛰어난 하나님의 평안이 그리스도 예수 안에서 너희 마음과 생각을 지키시리라", r: "빌립보서 4:6-7" },
-        { v: "보라 자식들은 여호와의 기업이요 태의 열매는 그의 상급이로다", r: "시편 127:3" }
+        { v: "아무 것도 염려하지 말고 다만 모든 일에 기도와 간구로, 너희 구할 것을 감사함으로 하나님께 아뢰라 그리하면 모든 지각에 뛰어난 하나님의 평안이 그리스도 예수 안에서 너희 마음과 생각을 지키시리라", r: "빌립보서 4:6-7" }
     ];
 
-    const initialData = [
-        { id: 1718928000000, date: "2026-06-21", weight: "", bp: "", loggedAt: "2026-06-21 22:00:00", wake: { val: "88", memo: "" }, breakfast: { val: "91", memo: "오이, 부침개, 닭도리탕, 쌈채소, 감자, 오이 고수무침" }, lunch: { val: "", memo: "" }, dinner: { val: "", memo: "" } },
-        { id: 1718841600000, date: "2026-06-20", weight: "", bp: "", loggedAt: "2026-06-20 22:00:00", wake: { val: "91", memo: "" }, breakfast: { val: "117", memo: "토마토, 흰밥1/2, 무생채, 쌈채소, 계란찜, 김치볶음" }, lunch: { val: "123", memo: "누룽지 왕뚜꺼우라면 1/3, 오이 1/3" }, dinner: { val: "114", memo: "오이 1/2, 마라떡볶이 야채랑 오뎅만" } },
-        { id: 1718755200000, date: "2026-06-19", weight: "", bp: "", loggedAt: "2026-06-19 22:00:00", wake: { val: "93", memo: "" }, breakfast: { val: "102", memo: "오이, 참외, 계란쨈샌드위치" }, lunch: { val: "130", memo: "흰밥, 숭륭, 전복볶음, 김치볶음, 딸기우유 1먹음, 20분 산책" }, dinner: { val: "206", memo: "토마토1, 마라떡볶이, 피자1조각, 쿨피스 한목음" } }
-    ];
-
+    // 기본 로컬 데이터 가져오기 후 클라우드 다운로드 수행
     records = JSON.parse(localStorage.getItem('sugarRecords')) || [];
-    if (records.length === 0) {
-        records = initialData;
-        localStorage.setItem('sugarRecords', JSON.stringify(records));
-    }
-
+    
     document.getElementById('date').value = new Date().toISOString().substring(0, 10);
     document.getElementById('date').addEventListener('change', function() { loadRecordByDate(this.value); });
-
     document.documentElement.setAttribute('data-theme', currentTheme);
+    
     applyLanguage();
     setDailyVerse();
     renderAll();
     loadRecordByDate(document.getElementById('date').value);
+    
+    // 핵심: 앱 로드 시 구글 시트 원격 저장소로부터 데이터 강제 동기화(불러오기)
+    fetchCloudData();
 
     function applyLanguage() {
         const p = langPack[currentLang];
@@ -312,18 +222,39 @@
         document.getElementById('lblBreakfast').innerText = p.breakfast;
         document.getElementById('lblLunch').innerText = p.lunch;
         document.getElementById('lblDinner').innerText = p.dinner;
+        document.getElementById('syncBar').innerText = p.loading;
         
         const btnSubmit = document.getElementById('submitBtn');
         if(!btnSubmit.disabled) btnSubmit.innerText = p.submit;
         
-        document.getElementById('btnExport').innerText = p.export;
-        document.getElementById('btnImport').innerText = p.import;
         document.getElementById('langBtn').innerText = currentLang === 'ko' ? 'EN' : 'KO';
-        
         const isChartOpen = document.getElementById('chartContainer').classList.contains('open');
         document.getElementById('chartToggleBtn').innerText = isChartOpen ? p.chartHide : p.chartShow;
         const isHistOpen = document.getElementById('historyContainer').classList.contains('open');
         document.getElementById('historyToggleBtn').innerText = isHistOpen ? p.histHide : p.histShow;
+    }
+
+    function fetchCloudData() {
+        if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes('여기에_복사한_구글')) return;
+        const syncBar = document.getElementById('syncBar');
+        syncBar.style.display = 'block';
+
+        fetch(GOOGLE_SCRIPT_URL)
+            .then(res => res.json())
+            .then(cloudRecords => {
+                if (cloudRecords && cloudRecords.length > 0) {
+                    // 구글 시트에서 받아온 깨끗한 배열 데이터로 병합 및 동기화
+                    records = cloudRecords;
+                    localStorage.setItem('sugarRecords', JSON.stringify(records));
+                    renderAll();
+                    loadRecordByDate(document.getElementById('date').value);
+                }
+                syncBar.style.display = 'none';
+            })
+            .catch(err => {
+                console.error("구글 시트 데이터 불러오기 실패:", err);
+                syncBar.style.display = 'none';
+            });
     }
 
     function toggleLang() {
@@ -342,9 +273,8 @@
 
     function setDailyVerse() {
         const today = new Date().getDate();
-        const index = today % bibleVerses.length;
-        document.getElementById('bibleVerse').innerText = bibleVerses[index].v;
-        document.getElementById('bibleRef').innerText = bibleVerses[index].r;
+        document.getElementById('bibleVerse').innerText = bibleVerses[today % bibleVerses.length].v;
+        document.getElementById('bibleRef').innerText = bibleVerses[today % bibleVerses.length].r;
     }
 
     function toggleChart() {
@@ -352,12 +282,7 @@
         container.classList.toggle('open');
         applyLanguage();
         if(container.classList.contains('open')) {
-            setTimeout(() => { 
-                if(sugarChart) {
-                    sugarChart.resize();
-                    sugarChart.update();
-                }
-            }, 450); // 펼쳐지는 트랜지션 애니메이션 완료 후 정확히 렌더링하도록 딜레이 보정
+            setTimeout(() => { if(sugarChart) { sugarChart.resize(); sugarChart.update(); } }, 450);
         }
     }
 
@@ -386,40 +311,38 @@
         }
     }
 
-    // 폼 저장 버튼 핸들러 (로컬 저장 + 구글 스프레드시트 비동기 업로드)
     document.getElementById('diabetesForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const p = langPack[currentLang];
         const btnSubmit = document.getElementById('submitBtn');
         const inputDate = document.getElementById('date').value;
-        const nowStr = new Date().toLocaleString();
 
         const newRecord = {
             id: Date.now(), date: inputDate,
             weight: document.getElementById('weight').value,
             bp: document.getElementById('bp').value,
-            loggedAt: nowStr,
+            loggedAt: new Date().toLocaleString(),
             wake: { val: document.getElementById('sugar_wake').value, memo: document.getElementById('memo_wake').value },
             breakfast: { val: document.getElementById('sugar_breakfast').value, memo: document.getElementById('memo_breakfast').value },
             lunch: { val: document.getElementById('sugar_lunch').value, memo: document.getElementById('memo_lunch').value },
             dinner: { val: document.getElementById('sugar_dinner').value, memo: document.getElementById('memo_dinner').value }
         };
 
-        // 1. 브라우저 내부 로컬스토리지 즉시 반영
+        // 로컬 업데이트 선반영
         records = records.filter(r => r.date !== inputDate);
         records.push(newRecord);
         records.sort((a, b) => new Date(b.date) - new Date(a.date));
         localStorage.setItem('sugarRecords', JSON.stringify(records));
         renderAll();
 
-        // 2. 구글 시트 백엔드로 데이터 POST 전송
-        if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL !== '여기에_복사한_구글_웹_앱_URL을_넣으세요') {
+        // 클라우드 POST 전송
+        if (GOOGLE_SCRIPT_URL && !GOOGLE_SCRIPT_URL.includes('여기에_복사한_구글')) {
             btnSubmit.disabled = true;
             btnSubmit.innerText = p.saving;
 
             fetch(GOOGLE_SCRIPT_URL, {
                 method: 'POST',
-                mode: 'no-cors', // 크로스 오리진 제한 우회 규칙
+                mode: 'no-cors',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newRecord)
             })
@@ -427,15 +350,13 @@
                 btnSubmit.disabled = false;
                 btnSubmit.innerText = p.submit;
                 alert(p.alertSave);
+                fetchCloudData(); // 구글 시트에 들어간 최신 번호판 다시 재동기화
             })
             .catch(err => {
                 console.error(err);
                 btnSubmit.disabled = false;
                 btnSubmit.innerText = p.submit;
-                alert("구글 시트 저장 실패 (네트워크를 확인하세요). 로컬에는 보존되었습니다.");
             });
-        } else {
-            alert("로컬 저장 완료! (구글 시트 URL이 설정되지 않아 클라우드 전송은 생략되었습니다)");
         }
     });
 
@@ -450,19 +371,10 @@
             records = records.filter(r => r.id !== id);
             localStorage.setItem('sugarRecords', JSON.stringify(records));
             renderAll();
-            loadRecordByDate(document.getElementById('date').value);
         }
     }
 
-    function getDayOfWeek(dateString) {
-        const week = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        return week[new Date(dateString).getDay()];
-    }
-
-    function renderAll() {
-        renderRecords();
-        updateChart();
-    }
+    function renderAll() { renderRecords(); updateChart(); }
 
     function renderRecords() {
         const historyList = document.getElementById('historyList');
@@ -476,25 +388,18 @@
         records.forEach(r => {
             const card = document.createElement('div');
             card.className = 'record-card';
-            const dayOfWeek = getDayOfWeek(r.date);
             
             const createSugarLine = (title, data, limit) => {
-                if (!data.val) return `<div class="sugar-item"><span>◦ ${title}</span><span style="color:#aaa;">: ${p.unrecorded}</span></div>`;
+                if (!data || !data.val) return `<div class="sugar-item"><span>◦ ${title}</span><span style="color:#aaa;">: ${p.unrecorded}</span></div>`;
                 const val = parseInt(data.val);
                 const isOver = val > limit;
-                const statusClass = isOver ? "danger" : "success";
-                const warningMsg = isOver ? `<span class="cheer-msg">${p.cheer}</span>` : '';
-                
                 return `
                     <div class="sugar-item">
-                        <div>
-                            <span class="${statusClass}">✓ ${val} mg/dL</span> 
-                            <span style="font-size:12px; color:#777;">(${title} >${limit}mg/dL)</span>
-                            ${warningMsg}
-                            ${data.memo ? `<div class="meal-memo">↳ 📝 ${data.memo}</div>` : ''}
-                        </div>
-                    </div>
-                `;
+                        <span class="${isOver ? "danger" : "success"}">✓ ${val} mg/dL</span> 
+                        <span style="font-size:12px; color:#777;">(${title})</span>
+                        ${isOver ? `<span class="cheer-msg">${p.cheer}</span>` : ''}
+                        ${data.memo ? `<div class="meal-memo">↳ 📝 ${data.memo}</div>` : ''}
+                    </div>`;
             };
 
             card.innerHTML = `
@@ -502,16 +407,14 @@
                     <button class="action-btn edit" onclick="editRecord('${r.date}')">Edit</button>
                     <button class="action-btn delete" onclick="deleteRecord(${r.id})">Del</button>
                 </div>
-                <div class="record-date">${r.date} ${dayOfWeek}</div>
+                <div class="record-date">${r.date}</div>
                 <div class="record-meta">
-                    <span>BP: ${r.bp ? r.bp + ' mmHg' : '-'}</span>
-                    <span>Wt: ${r.weight ? r.weight + ' kg' : '-'}</span>
+                    <span>BP: ${r.bp || '-'}</span><span>Wt: ${r.weight ? r.weight + 'kg' : '-'}</span>
                 </div>
-                ${createSugarLine(currentLang === 'ko' ? '공복 혈당' : 'Fasting', r.wake, 95)}
-                ${createSugarLine(currentLang === 'ko' ? '아침 식후' : 'Breakfast', r.breakfast, 120)}
-                ${createSugarLine(currentLang === 'ko' ? '점심 식후' : 'Lunch', r.lunch, 120)}
-                ${createSugarLine(currentLang === 'ko' ? '저녁 식후' : 'Dinner', r.dinner, 120)}
-                <div class="logging-time">${p.logTime} ${r.loggedAt || '-'}</div>
+                ${createSugarLine(currentLang === 'ko' ? '공복' : 'Fasting', r.wake, 95)}
+                ${createSugarLine(currentLang === 'ko' ? '아침' : 'Breakfast', r.breakfast, 120)}
+                ${createSugarLine(currentLang === 'ko' ? '점심' : 'Lunch', r.lunch, 120)}
+                ${createSugarLine(currentLang === 'ko' ? '저녁' : 'Dinner', r.dinner, 120)}
             `;
             historyList.appendChild(card);
         });
@@ -520,57 +423,22 @@
     function updateChart() {
         const sortedRecords = [...records].sort((a, b) => new Date(a.date) - new Date(b.date));
         const labels = sortedRecords.map(r => r.date.substring(5));
-        const wakeData = sortedRecords.map(r => r.wake.val || null);
-        const breakfastData = sortedRecords.map(r => r.breakfast.val || null);
-        const lunchData = sortedRecords.map(r => r.lunch.val || null);
-        const dinnerData = sortedRecords.map(r => r.dinner.val || null);
-
         if (sugarChart) sugarChart.destroy();
 
-        const ctx = document.getElementById('sugarChart').getContext('2d');
-        sugarChart = new Chart(ctx, {
+        sugarChart = new Chart(document.getElementById('sugarChart').getContext('2d'), {
             type: 'line',
             data: {
                 labels: labels,
                 datasets: [
-                    { label: currentLang === 'ko' ? '공복' : 'Fasting', data: wakeData, borderColor: '#ffb3c6', backgroundColor: '#ffb3c6', tension: 0.1, spanGaps: true },
-                    { label: currentLang === 'ko' ? '아침' : 'Breakfast', data: breakfastData, borderColor: '#4caf50', backgroundColor: '#4caf50', tension: 0.1, spanGaps: true },
-                    { label: currentLang === 'ko' ? '점심' : 'Lunch', data: lunchData, borderColor: '#2196F3', backgroundColor: '#2196F3', tension: 0.1, spanGaps: true },
-                    { label: currentLang === 'ko' ? '저녁' : 'Dinner', data: dinnerData, borderColor: '#9c27b0', backgroundColor: '#9c27b0', tension: 0.1, spanGaps: true }
+                    { label: currentLang === 'ko' ? '공복' : 'Fasting', data: sortedRecords.map(r => r.wake.val || null), borderColor: '#ffb3c6', spanGaps: true },
+                    { label: currentLang === 'ko' ? '아침' : 'Breakfast', data: sortedRecords.map(r => r.breakfast.val || null), borderColor: '#4caf50', spanGaps: true },
+                    { label: currentLang === 'ko' ? '점심' : 'Lunch', data: sortedRecords.map(r => r.lunch.val || null), borderColor: '#2196F3', spanGaps: true },
+                    { label: currentLang === 'ko' ? '저녁' : 'Dinner', data: sortedRecords.map(r => r.dinner.val || null), borderColor: '#9c27b0', spanGaps: true }
                 ]
             },
-            options: {
-                responsive: true,
-                scales: { y: { suggestedMin: 70, suggestedMax: 150 } }
-            }
+            options: { responsive: true }
         });
-    }
-
-    function exportData() {
-        const dataStr = btoa(encodeURIComponent(JSON.stringify(records)));
-        navigator.clipboard.writeText(dataStr).then(() => {
-            alert(langPack[currentLang].alertCopied);
-        });
-    }
-
-    function importData() {
-        const p = langPack[currentLang];
-        const rawData = prompt(p.alertPrompt);
-        if (!rawData) return;
-        try {
-            const decodedData = JSON.parse(decodeURIComponent(atob(rawData)));
-            if (Array.isArray(decodedData)) {
-                records = decodedData;
-                localStorage.setItem('sugarRecords', JSON.stringify(records));
-                renderAll();
-                loadRecordByDate(document.getElementById('date').value);
-                alert(p.alertSuccessImport);
-            }
-        } catch(e) {
-            alert("Invalid Data Format.");
-        }
     }
 </script>
-
 </body>
 </html>
