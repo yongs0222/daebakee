@@ -198,7 +198,7 @@
 
 <script>
     // ⚠️ 본인의 새로운 배포 실행 URL을 여기에 입력하세요.
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz4SDrCwAq9XvlTi6__exoWsNxFoiDcVz4SBFUgluhoH9K3qdRxtQ69NwzSgf32w_sw/exec';
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzWq9PmFrrkuUBOQQrcUbBWshtw8bf37r_-TTIwSOV4lickR7WUbpUx_THyxGmA7Ug/exec';
     
     const langPack = {
         ko: {
@@ -353,53 +353,59 @@
         window.scrollTo({top: 0, behavior: 'smooth'});
     }
 
-    function deleteRecord(dateString) {
-        const p = langPack[currentLang];
-        const cleanDate = formatLoadingDate(dateString);
-        
-        if (!confirm(`[${cleanDate}] ${p.confirmDelete}`)) {
-            return;
-        }
+	function deleteRecord(dateString) {
+		const p = langPack[currentLang];
+		const cleanDate = formatLoadingDate(dateString);
+		
+		// 1. 유저 삭제 확인 팝업
+		if (!confirm(`[${cleanDate}] ${p.confirmDelete}`)) {
+			return;
+		}
 
-        document.getElementById('syncBar').style.display = 'block';
-        document.getElementById('syncBar').innerText = p.deleting;
+		document.getElementById('syncBar').style.display = 'block';
+		document.getElementById('syncBar').innerText = p.deleting;
 
-        const deletePayload = {
-            action: "DELETE",
-            date: cleanDate
-        };
+		// 💡 [CORS 영구 박살] 브라우저 보안 필터링을 우회하기 위해 가상 폼태그 데이터 생성
+		const formBody = [];
+		formBody.push(encodeURIComponent("action") + "=" + encodeURIComponent("DELETE"));
+		formBody.push(encodeURIComponent("date") + "=" + encodeURIComponent(cleanDate));
+		const readyData = formBody.join("&");
 
-        fetch(GOOGLE_SCRIPT_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(deletePayload)
-        })
-        .then(() => {
-            records = records.filter(r => formatLoadingDate(r.date) !== cleanDate);
-            localStorage.setItem('sugarRecords', JSON.stringify(records));
-            
-            renderRecords();
-            if(document.getElementById('chartContainer').classList.contains('open')) {
-                updateChart();
-            }
-            
-            if (document.getElementById('date').value === cleanDate) {
-                document.getElementById('diabetesForm').reset();
-                const initNow = new Date();
-                document.getElementById('date').value = `${initNow.getFullYear()}-${String(initNow.getMonth() + 1).padStart(2, '0')}-${String(initNow.getDate()).padStart(2, '0')}`;
-            }
-            
-            document.getElementById('syncBar').style.display = 'none';
-            applyLanguage();
-            fetchCloudData();
-        })
-        .catch(err => {
-            console.error(err);
-            document.getElementById('syncBar').style.display = 'none';
-            applyLanguage();
-        });
-    }
+		// 2. 구글 앱스 스크립트로 전송 (Content-Type을 폼 표준으로 지정하여 데이터 무조건 보존)
+		fetch(GOOGLE_SCRIPT_URL, {
+			method: 'POST',
+			mode: 'no-cors', // 폼 전송 형태일 때는 no-cors여도 데이터가 절대 유실되지 않고 GAS로 들어갑니다.
+			headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+			body: readyData
+		})
+		.then(() => {
+			// 3. 로컬 메모리 및 화면 즉시 갱신
+			records = records.filter(r => formatLoadingDate(r.date) !== cleanDate);
+			localStorage.setItem('sugarRecords', JSON.stringify(records));
+			
+			renderRecords();
+			if(document.getElementById('chartContainer').classList.contains('open')) {
+				updateChart();
+			}
+			
+			if (document.getElementById('date').value === cleanDate) {
+				document.getElementById('diabetesForm').reset();
+				const initNow = new Date();
+				document.getElementById('date').value = `${initNow.getFullYear()}-${String(initNow.getMonth() + 1).padStart(2, '0')}-${String(initNow.getDate()).padStart(2, '0')}`;
+			}
+			
+			document.getElementById('syncBar').style.display = 'none';
+			applyLanguage();
+			
+			// 4. 안전하게 1초 뒤에 구글 시트 데이터 다시 긁어와서 동기화 검증
+			setTimeout(fetchCloudData, 1000);
+		})
+		.catch(err => {
+			console.error("삭제 요청 중 로컬 에러 발생:", err);
+			document.getElementById('syncBar').style.display = 'none';
+		});
+	}
+
 
     function loadRecordByDate(dateString) {
         const targetDate = formatLoadingDate(dateString);
@@ -426,52 +432,52 @@
         }
     }
 
-    document.getElementById('diabetesForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const p = langPack[currentLang];
-        const btnSubmit = document.getElementById('submitBtn');
-        const inputDate = document.getElementById('date').value;
+	 document.getElementById('diabetesForm').addEventListener('submit', function(e) {
+		e.preventDefault();
+		const p = langPack[currentLang];
+		const btnSubmit = document.getElementById('submitBtn');
+		const inputDate = document.getElementById('date').value;
 
-        // 💡 백엔드(GAS)가 순번 지정을 전담하므로 id 필드는 구조 매칭용 빈 값처리 가능
-        const newRecord = {
-            id: "", date: inputDate,
-            weight: document.getElementById('weight').value,
-            bp: document.getElementById('bp').value,
-            loggedAt: new Date().toLocaleString(),
-            wake: { val: document.getElementById('sugar_wake').value, memo: document.getElementById('memo_wake').value },
-            breakfast: { val: document.getElementById('sugar_breakfast').value, memo: document.getElementById('memo_breakfast').value },
-            lunch: { val: document.getElementById('sugar_lunch').value, memo: document.getElementById('memo_lunch').value },
-            dinner: { val: document.getElementById('sugar_dinner').value, memo: document.getElementById('memo_dinner').value }
-        };
+		const newRecord = {
+			id: "", date: inputDate,
+			weight: document.getElementById('weight').value,
+			bp: document.getElementById('bp').value,
+			loggedAt: new Date().toLocaleString(),
+			wake: { val: document.getElementById('sugar_wake').value, memo: document.getElementById('memo_wake').value },
+			breakfast: { val: document.getElementById('sugar_breakfast').value, memo: document.getElementById('memo_breakfast').value },
+			lunch: { val: document.getElementById('sugar_lunch').value, memo: document.getElementById('memo_lunch').value },
+			dinner: { val: document.getElementById('sugar_dinner').value, memo: document.getElementById('memo_dinner').value }
+		};
 
-        const postPayload = {
-            id: newRecord.id, date: newRecord.date, weight: newRecord.weight, bp: newRecord.bp, loggedAt: newRecord.loggedAt,
-            wake_val: newRecord.wake.val, wake_memo: newRecord.wake.memo,
-            breakfast_val: newRecord.breakfast.val, breakfast_memo: newRecord.breakfast.memo,
-            lunch_val: newRecord.lunch.val, lunch_memo: newRecord.lunch.memo,
-            dinner_val: newRecord.dinner.val, dinner_memo: newRecord.dinner.memo
-        };
+		const postPayload = {
+			id: newRecord.id, date: newRecord.date, weight: newRecord.weight, bp: newRecord.bp, loggedAt: newRecord.loggedAt,
+			wake_val: newRecord.wake.val, wake_memo: newRecord.wake.memo,
+			breakfast_val: newRecord.breakfast.val, breakfast_memo: newRecord.breakfast.memo,
+			lunch_val: newRecord.lunch.val, lunch_memo: newRecord.lunch.memo,
+			dinner_val: newRecord.dinner.val, dinner_memo: newRecord.dinner.memo
+		};
 
-        btnSubmit.disabled = true;
-        btnSubmit.innerText = p.saving;
+		btnSubmit.disabled = true;
+		btnSubmit.innerText = p.saving;
 
-        fetch(GOOGLE_SCRIPT_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(postPayload)
-        })
-        .then(() => {
-            btnSubmit.disabled = false;
-            applyLanguage();
-            fetchCloudData();
-        })
-        .catch(err => {
-            console.error(err);
-            btnSubmit.disabled = false;
-            applyLanguage();
-        });
-    });
+		// 💡 [교정]: 데이터 유실 없는 전송 포맷 체계로 변경
+		fetch(GOOGLE_SCRIPT_URL, {
+			method: 'POST',
+			headers: { 'Content-Type': 'text/plain' },
+			body: JSON.stringify(postPayload)
+		})
+		.then(() => {
+			btnSubmit.disabled = false;
+			applyLanguage();
+			fetchCloudData();
+		})
+		.catch(err => {
+			console.error(err);
+			btnSubmit.disabled = false;
+			applyLanguage();
+			fetchCloudData();
+		});
+	});
 
     function renderRecords() {
         const historyList = document.getElementById('historyList');
