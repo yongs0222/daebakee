@@ -101,7 +101,6 @@
         .success { color: var(--success-color); font-weight: bold; }
         .meal-memo { font-size: 12px; color: #666; margin-top: 4px; padding-left: 10px; font-style: italic; word-break: break-all; }
         
-        /* 💡 카드 우측 상단 액션 버튼 영역 디자인 조정 */
         .card-actions { position: absolute; top: 12px; right: 15px; display: flex; gap: 12px; }
         .action-btn { background: none; border: none; cursor: pointer; font-size: 13px; font-weight: bold; padding: 2px 5px; }
         .action-btn.edit { color: #2196F3; }
@@ -198,7 +197,8 @@
 </div>
 
 <script>
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwq87CpcqlgL9bnXy6YHh078GUukvIDr4TOppqLG9RKZFNn8U2oWSn7gLqzMEPt1zea/exec';
+    // ⚠️ 본인의 새로운 배포 실행 URL을 여기에 입력하세요.
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyd4NzmBt-ZfKNXrdh6S7xN8TAMJqPHaU9bXyFeIdwx3JIy6GqZ8MdQoavZWI-iAjiO/exec';
     
     const langPack = {
         ko: {
@@ -353,14 +353,12 @@
         window.scrollTo({top: 0, behavior: 'smooth'});
     }
 
-    // 💡 [핵심 추가]: 유저 확인용 대화상자(Confirm) 팝업 창을 띄우고 구글 시트에 삭제 요청을 보내는 함수
     function deleteRecord(dateString) {
         const p = langPack[currentLang];
         const cleanDate = formatLoadingDate(dateString);
         
-        // 1. 정말 삭제할 것인지 묻는 브라우저 기본 팝업 노출
         if (!confirm(`[${cleanDate}] ${p.confirmDelete}`)) {
-            return; // 취소 누르면 작동 정지
+            return;
         }
 
         document.getElementById('syncBar').style.display = 'block';
@@ -371,7 +369,6 @@
             date: cleanDate
         };
 
-        // 2. 구글 앱스 스크립트로 삭제 명령 전송
         fetch(GOOGLE_SCRIPT_URL, {
             method: 'POST',
             mode: 'no-cors',
@@ -379,7 +376,6 @@
             body: JSON.stringify(deletePayload)
         })
         .then(() => {
-            // 로컬 메모리에서도 해당 레코드 제거 후 화면 갱신
             records = records.filter(r => formatLoadingDate(r.date) !== cleanDate);
             localStorage.setItem('sugarRecords', JSON.stringify(records));
             
@@ -388,7 +384,6 @@
                 updateChart();
             }
             
-            // 현재 입력 폼에 띄워진 날짜와 같다면 리셋 처리
             if (document.getElementById('date').value === cleanDate) {
                 document.getElementById('diabetesForm').reset();
                 const initNow = new Date();
@@ -397,7 +392,7 @@
             
             document.getElementById('syncBar').style.display = 'none';
             applyLanguage();
-            fetchCloudData(); // 구글 시트와 최종 동기화 재수행
+            fetchCloudData();
         })
         .catch(err => {
             console.error(err);
@@ -437,8 +432,9 @@
         const btnSubmit = document.getElementById('submitBtn');
         const inputDate = document.getElementById('date').value;
 
+        // 💡 백엔드(GAS)가 순번 지정을 전담하므로 id 필드는 구조 매칭용 빈 값처리 가능
         const newRecord = {
-            id: Date.now(), date: inputDate,
+            id: "", date: inputDate,
             weight: document.getElementById('weight').value,
             bp: document.getElementById('bp').value,
             loggedAt: new Date().toLocaleString(),
@@ -507,13 +503,12 @@
                     </div>`;
             };
 
-            // 💡 [수정]: 카드 우측 상단 액션 바에 Delete 버튼 추가 연결
             card.innerHTML = `
                 <div class="card-actions">
                     <button class="action-btn edit" onclick="editRecord('${cleanDate}')">Edit</button>
                     <button class="action-btn delete" onclick="deleteRecord('${cleanDate}')">Delete</button>
                 </div>
-                <div class="record-date">${cleanDate}</div>
+                <div class="record-date">${cleanDate} <span style="font-size: 11px; color:#999; font-weight: normal; margin-left: 5px;">#${r.id}</span></div>
                 <div class="record-meta">
                     <span>BP: ${r.bp || '-'}</span><span>Wt: ${r.weight ? r.weight + 'kg' : '-'}</span>
                 </div>
