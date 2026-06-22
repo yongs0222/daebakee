@@ -59,7 +59,6 @@
         
         .toggle-section-btn { background-color: var(--meta-bg); color: var(--text-color); padding: 8px 12px; font-size: 13px; border-radius: 20px; width: auto; margin: 10px auto; display: block; border: 1px solid var(--border-color); cursor: pointer; }
         
-        /* 💡 접고 펴는 컨테이너 기본 공통 속성 */
         .foldable-container { 
             max-height: 0; 
             overflow: hidden; 
@@ -69,7 +68,6 @@
             box-sizing: border-box;
         }
 
-        /* 📈 1. 그래프 박스가 열릴 때 크기 제한 */
         #chartContainer.open { 
             max-height: 340px; 
             padding: 10px; 
@@ -80,7 +78,6 @@
             height: 300px;
         }
 
-        /* 📜 2. [핵심 수정] 기록 내역 박스가 열릴 때는 높이 제한을 완전히 해제하여 무제한 노출 */
         #historyContainer.open { 
             max-height: none !important; 
             overflow: visible !important;
@@ -103,9 +100,14 @@
         .danger { color: var(--danger-color); font-weight: bold; }
         .success { color: var(--success-color); font-weight: bold; }
         .meal-memo { font-size: 12px; color: #666; margin-top: 4px; padding-left: 10px; font-style: italic; word-break: break-all; }
-        .card-actions { position: absolute; top: 12px; right: 15px; display: flex; gap: 10px; }
-        .action-btn { background: none; border: none; color: #ff85a2; cursor: pointer; font-size: 13px; font-weight: bold; }
-        .action-btn:hover { color: #2196F3; }
+        
+        /* 💡 카드 우측 상단 액션 버튼 영역 디자인 조정 */
+        .card-actions { position: absolute; top: 12px; right: 15px; display: flex; gap: 12px; }
+        .action-btn { background: none; border: none; cursor: pointer; font-size: 13px; font-weight: bold; padding: 2px 5px; }
+        .action-btn.edit { color: #2196F3; }
+        .action-btn.delete { color: var(--danger-color); }
+        .action-btn:hover { text-decoration: underline; }
+        
         .cheer-msg { font-size: 11px; color: #ff6b8b; background: #fff0f3; padding: 2px 6px; border-radius: 4px; margin-left: 5px; }
     </style>
 </head>
@@ -117,7 +119,7 @@
         <button class="top-btn" id="themeBtn" onclick="toggleTheme()">🌙 Nighttime</button>
     </div>
 
-    <h1>지희 대박이 임당체크용</h1>
+    <h1>🩸 임당체크용</h1>
     <div class="loading-sync" id="syncBar">🔄 구글 클라우드에서 최신 데이터를 동기화하는 중...</div>
     
     <div class="bible-box" id="bibleBox">
@@ -203,13 +205,17 @@
             subtitle: "기록 내역", date: "날짜", weight: "몸무게 (kg)",
             bp: "공복 혈압 (mmHg)", wake: "공복 혈당", breakfast: "아침 식후 2시간", lunch: "점심 식후 2시간", dinner: "저녁 식후 2시간",
             submit: "기록 저장 / 업데이트", saving: "구글 시트 저장 중...", unrecorded: "미기록", loading: "🔄 구글 클라우드에서 동기화 중...",
-            cheer: "토닥토닥, 다음 끼니에 조절해요! 🤍"
+            cheer: "토닥토닥, 다음 끼니에 조절해요! 🤍",
+            confirmDelete: " 정말 이 기록을 완전히 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.",
+            deleting: "구글 시트에서 삭제 중..."
         },
         en: {
             subtitle: "History Logs", date: "Date", weight: "Weight (kg)",
             bp: "BP (mmHg)", wake: "Fasting", breakfast: "Breakfast 2hr", lunch: "Lunch 2hr", dinner: "Dinner 2hr",
             submit: "Save Record", saving: "Saving...", unrecorded: "No Record", loading: "🔄 Syncing data...",
-            cheer: "It's okay, manage next meal! 🤍"
+            cheer: "It's okay, manage next meal! 🤍",
+            confirmDelete: "Are you sure you want to completely delete this record?\nThis action cannot be undone.",
+            deleting: "Deleting..."
         }
     };
 
@@ -347,6 +353,59 @@
         window.scrollTo({top: 0, behavior: 'smooth'});
     }
 
+    // 💡 [핵심 추가]: 유저 확인용 대화상자(Confirm) 팝업 창을 띄우고 구글 시트에 삭제 요청을 보내는 함수
+    function deleteRecord(dateString) {
+        const p = langPack[currentLang];
+        const cleanDate = formatLoadingDate(dateString);
+        
+        // 1. 정말 삭제할 것인지 묻는 브라우저 기본 팝업 노출
+        if (!confirm(`[${cleanDate}] ${p.confirmDelete}`)) {
+            return; // 취소 누르면 작동 정지
+        }
+
+        document.getElementById('syncBar').style.display = 'block';
+        document.getElementById('syncBar').innerText = p.deleting;
+
+        const deletePayload = {
+            action: "DELETE",
+            date: cleanDate
+        };
+
+        // 2. 구글 앱스 스크립트로 삭제 명령 전송
+        fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(deletePayload)
+        })
+        .then(() => {
+            // 로컬 메모리에서도 해당 레코드 제거 후 화면 갱신
+            records = records.filter(r => formatLoadingDate(r.date) !== cleanDate);
+            localStorage.setItem('sugarRecords', JSON.stringify(records));
+            
+            renderRecords();
+            if(document.getElementById('chartContainer').classList.contains('open')) {
+                updateChart();
+            }
+            
+            // 현재 입력 폼에 띄워진 날짜와 같다면 리셋 처리
+            if (document.getElementById('date').value === cleanDate) {
+                document.getElementById('diabetesForm').reset();
+                const initNow = new Date();
+                document.getElementById('date').value = `${initNow.getFullYear()}-${String(initNow.getMonth() + 1).padStart(2, '0')}-${String(initNow.getDate()).padStart(2, '0')}`;
+            }
+            
+            document.getElementById('syncBar').style.display = 'none';
+            applyLanguage();
+            fetchCloudData(); // 구글 시트와 최종 동기화 재수행
+        })
+        .catch(err => {
+            console.error(err);
+            document.getElementById('syncBar').style.display = 'none';
+            applyLanguage();
+        });
+    }
+
     function loadRecordByDate(dateString) {
         const targetDate = formatLoadingDate(dateString);
         
@@ -448,9 +507,11 @@
                     </div>`;
             };
 
+            // 💡 [수정]: 카드 우측 상단 액션 바에 Delete 버튼 추가 연결
             card.innerHTML = `
                 <div class="card-actions">
                     <button class="action-btn edit" onclick="editRecord('${cleanDate}')">Edit</button>
+                    <button class="action-btn delete" onclick="deleteRecord('${cleanDate}')">Delete</button>
                 </div>
                 <div class="record-date">${cleanDate}</div>
                 <div class="record-meta">
